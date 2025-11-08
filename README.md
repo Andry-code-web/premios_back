@@ -90,37 +90,17 @@ Para otros proveedores, ajusta la configuración de acuerdo con la plataforma.
 
 Revisa el archivo `LICENSE` en la raíz del repositorio para conocer los términos.
 
----
-
-Si quieres, puedo también:
-
-- añadir ejemplos de requests (curl / Postman) para cada ruta;
-- crear un archivo `.env.example` con variables esperadas;
-- añadir un script `npm run dev` con `nodemon`.
-
-Dime qué prefieres y lo añado.
-
-## `.env` - ejemplo mínimo
-
-Aquí tienes un ejemplo de variables que la aplicación suele necesitar. Crea un archivo llamado `.env` en la raíz con valores reales (no subir al repositorio):
-
 ```env
 # Puerto en el que escuchará la API
 PORT=3000
 
 # Cadena de conexión a la base de datos (ajusta según tu motor)
-# Ejemplo MongoDB:
-# DATABASE_URL=mongodb://usuario:password@host:27017/nombre_bd
-
-# Ejemplo Postgres:
-# DATABASE_URL=postgres://usuario:password@host:5432/nombre_bd
-
-# Otras variables opcionales
-# JWT_SECRET=una_clave_secreta
-# NODE_ENV=development
+# Ejemplo Mysql:
+# DB_HOST=local
+# DB_USER=user
+# DB_PASSWORD=****
+# DB_NAME=database
 ```
-
-También he añadido un archivo de ejemplo `.env.example` en el repositorio con las mismas variables sin valores.
 
 ## Postman / Ejemplos de peticiones
 
