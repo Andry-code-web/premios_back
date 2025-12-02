@@ -1,41 +1,66 @@
-# Dependencies
+# Node
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-
-# Environment variables
-.env
-.env.local
-.env.*.local
-
-# Build outputs
-dist/
-build/
-.next/
-
-# Cache
-.cache/
-.npm
-
-# IDE and editor files
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Logs
 logs/
 *.log
+pids/
+*.pid
+*.seed
+*.pid.lock
 
-# Coverage reports
+# Runtime / temp
+tmp/
+temp/
+.cache/
+.parcel-cache/
+
+# Build output
+dist/
+build/
+out/
+lib/
+esm/
+cjs/
+
+# Coverage
 coverage/
 .nyc_output/
 
-# Optional: if using TypeScript
-*.tsbuildinfo
+# Env files
+.env
+.env.*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# Optional: if using yarn
-.yarn/
-.yarnrc
+# Serverless / frameworks
+.serverless/
+.next/
+.nuxt/
+
+# Uploads / generated files
+uploads/
+uploads-*/
+*.tgz
+
+# IDEs and OS
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# Docker-compose override
+docker-compose.override.yml
+
+# Misc
+.snyk
+*.swp
+*~
