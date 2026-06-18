@@ -6,10 +6,9 @@ exports.getAllTickets = async (req, res) => {
     const [rows] = await db.query(
       `SELECT t.*, 
               c.nombres, c.apellidos, c.dni, c.celular, c.email,
-              s.nombre AS sorteo_nombre
+              'Sorteo General' AS sorteo_nombre
        FROM tickets t
        JOIN clientes c ON t.cliente_id = c.id
-       JOIN sorteos s ON t.sorteo_id = s.id
        ORDER BY t.fecha_compra DESC`
     );
     res.json(rows);
@@ -23,10 +22,9 @@ exports.getTicketsByCliente = async (req, res) => {
   const { dni } = req.params;
   try {
     const [rows] = await db.query(
-      `SELECT t.*, s.nombre AS sorteo
+      `SELECT t.*, 'Sorteo General' AS sorteo
        FROM tickets t
        JOIN clientes c ON t.cliente_id = c.id
-       JOIN sorteos s ON t.sorteo_id = s.id
        WHERE c.dni = ?`,
       [dni]
     );
@@ -38,13 +36,17 @@ exports.getTicketsByCliente = async (req, res) => {
 
 // Crear/Asignar ticket a un cliente
 exports.createTicket = async (req, res) => {
+  const conn = await db.getConnection();
   try {
-    const { cliente_id, sorteo_id, monto, metodo_pago, comprobante_url } = req.body;
+    const { cliente_id, cantidad_tickets, monto, metodo_pago, comprobante_url } = req.body;
+
+    console.log(req.body);
 
     // Validar campos requeridos
-    if (!cliente_id || !sorteo_id || !monto || !metodo_pago) {
+    if (!cliente_id || !cantidad_tickets || !monto || !metodo_pago) {
+      conn.release();
       return res.status(400).json({
-        message: "Faltan campos requeridos: cliente_id, sorteo_id, monto, metodo_pago"
+        message: "Faltan campos requeridos: cliente_id, cantidad_tickets, monto, metodo_pago"
       });
     }
 
@@ -53,31 +55,35 @@ exports.createTicket = async (req, res) => {
     const prefijo = metodoPagoUpper === 'YAPE' ? 'YAPE' :
       metodoPagoUpper === 'PLIN' ? 'PLIN' : 'OTRO';
 
-    // Obtener el último número de ticket para este método de pago
-    const [lastTickets] = await db.query(
-      `SELECT codigo_ticket FROM tickets 
-       WHERE codigo_ticket LIKE ? 
-       ORDER BY id DESC LIMIT 1`,
-      [`${prefijo}-%`]
+    await conn.beginTransaction();
+
+    const [[counter]] = await conn.query(
+      `SELECT ultimo_numero
+   FROM ticket_counters
+   WHERE prefijo = ?
+   FOR UPDATE`,
+      [prefijo]
     );
 
-    // Calcular el siguiente número
-    let siguienteNumero = 1;
-    if (lastTickets.length > 0) {
-      const ultimoCodigo = lastTickets[0].codigo_ticket;
-      const numeroActual = parseInt(ultimoCodigo.split('-')[1]);
-      siguienteNumero = numeroActual + 1;
-    }
+    const nuevoNumero = counter.ultimo_numero + 1;
 
-    // Generar código con formato: YAPE-0001, PLIN-0001, OTRO-0001
-    const codigo_ticket = `${prefijo}-${siguienteNumero.toString().padStart(4, '0')}`;
+    await conn.execute(
+      `UPDATE ticket_counters
+   SET ultimo_numero = ?
+   WHERE prefijo = ?`,
+      [nuevoNumero, prefijo]
+    );
 
-    // Insertar ticket
-    const [result] = await db.execute(
-      `INSERT INTO tickets (codigo_ticket, cliente_id, sorteo_id, monto, metodo_pago, comprobante_url)
+    const codigo_ticket = `${prefijo}-${nuevoNumero.toString().padStart(4, '0')}`;
+
+    // 3) Insertar el ticket con el código único generado
+    const [result] = await conn.execute(
+      `INSERT INTO tickets (codigo_ticket, cliente_id, cantidad_tickets, monto, metodo_pago, comprobante_url)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [codigo_ticket, cliente_id, sorteo_id, monto, metodo_pago, comprobante_url || null]
+      [codigo_ticket, cliente_id, cantidad_tickets, monto, metodo_pago, comprobante_url || null]
     );
+
+    await conn.commit();
 
     res.status(201).json({
       message: "✅ Ticket asignado exitosamente",
@@ -85,7 +91,10 @@ exports.createTicket = async (req, res) => {
       codigo_ticket: codigo_ticket
     });
   } catch (error) {
+    await conn.rollback();
     console.error("Error al crear ticket:", error);
     res.status(500).json({ message: "❌ Error al crear ticket", error });
+  } finally {
+    conn.release();
   }
 };
